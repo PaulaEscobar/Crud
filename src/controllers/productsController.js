@@ -29,6 +29,7 @@ const controller = {
 	
 	// Create -  Method to store
 	store: (req, res) => {
+		const fileImage = req.file
 		const id = uuidv4() /*genera serie de n y letras*/
 		const { name, price, descount, category, description } = req.body
 		const newProduct = {
@@ -38,7 +39,7 @@ const controller = {
 			descount,
 			category,
 			description,
-			image: 'default.png'
+			image: fileImage ? fileImage.filename : 'default.jpg'
 		}
 		
 		products.push(newProduct)
@@ -58,6 +59,7 @@ const controller = {
 	
 	// Update - Method to update
 	update: (req, res) => {
+		const fileImage = req.file
 		const {id} = req.params;
 		const {name, price, descount,category, description, image} = req.body; /*el destruct+body. procesa los datos del form y crea un nuev product en json*/
 		const newArray = products.map(product => { /*itera y arregla*/
@@ -69,7 +71,7 @@ const controller = {
 				descount,
 				category,
 				description:description.trim(),
-				image: image ? image : product.image 
+				image: fileImage ? fileImage.filename : product.image /**/
 			}
 		}
 			return product
@@ -87,9 +89,14 @@ const controller = {
 			const productsFilePath = path.join(__dirname, '../data/productsDataBase.json');
 			const products = JSON.parse(fs.readFileSync(productsFilePath, 'utf-8'));
 			const {id} = req.params;
-			// const product = products.find(product => product.id == id); 
+			const product = products.find(product => product.id == +id); 
 			const newArray = products.filter(product => product.id != +id);  /*devuelve el array nuevo con el prod eliminado multer*/
 			const json = JSON.stringify(newArray);
+			fs.unlink(`./public/images/products/${product.image}`, (err) => {
+			if (err) throw err;
+				console.log(`imagen eliminada ${product.image}`);
+			})
+			
 			fs.writeFileSync(productsFilePath, json, 'utf-8');
 			res.redirect('/products');
 	}
